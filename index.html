@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat</title>
+    <meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+          --primary-color: #00ffff;
+          --secondary-color: #ff5e00;
+          --background-color: #0a0a1a;
+          --glass-bg: rgba(10, 10, 26, 0.6);
+          --border-color: rgba(0, 255, 255, 0.5);
+          --text-color: #e0e0e0;
+          --subtle-text-color: #b0b0b0;
+      }
+
+      body {
+          margin: 0;
+          background-color: var(--background-color);
+          color: var(--text-color);
+          font-family: 'Orbitron', sans-serif;
+          line-height: 1.6;
+          padding: 20px;
+          text-shadow: 0 0 3px rgba(0, 255, 255, 0.7);
+      }
+
+      .container {
+          max-width: 800px;
+          margin: 40px auto;
+          padding: 24px;
+          background: var(--glass-bg);
+          backdrop-filter: blur(8px);
+          border: 1px solid var(--border-color);
+          box-shadow: 0 0 25px rgba(0, 255, 255, 0.2) inset, 0 0 15px rgba(0, 0, 0, 0.5);
+      }
+
+      h1 {
+          color: var(--primary-color);
+          text-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--primary-color);
+          text-align: center;
+      }
+
+      h3 {
+          color: var(--secondary-color);
+          text-shadow: 0 0 7px var(--secondary-color);
+          text-align: center;
+      }
+
+      #chat-box {
+          height: 300px;
+          overflow-y: auto;
+          text-align: left;
+          border: 1px solid var(--border-color);
+          padding: 10px;
+          background: rgba(0,0,0,0.3);
+          font-size: 0.9em;
+          margin-bottom: 15px;
+      }
+
+      #chat-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+      }
+
+      .chat-input-group {
+          display: flex;
+      }
+
+      #msg {
+          flex-grow: 1;
+          background: rgba(0,0,0,0.5);
+          border: 1px solid var(--border-color);
+          color: var(--text-color);
+          padding: 8px;
+          font-family: 'Orbitron', sans-serif;
+          transition: box-shadow 0.3s ease;
+      }
+      #msg:focus {
+          outline: none;
+          box-shadow: 0 0 10px var(--primary-color);
+      }
+
+      .button {
+          display: inline-block;
+          background-color: transparent;
+          color: var(--primary-color);
+          padding: 10px 20px;
+          border: 1px solid var(--primary-color);
+          cursor: pointer;
+          text-decoration: none;
+          font-family: 'Orbitron', sans-serif;
+          text-shadow: 0 0 5px var(--primary-color);
+          transition: all 0.3s ease;
+          margin-left: 10px;
+      }
+      .button:hover {
+          background-color: var(--secondary-color);
+          color: var(--background-color);
+          border-color: var(--secondary-color);
+          box-shadow: 0 0 25px var(--secondary-color), 0 0 10px white;
+          text-shadow: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Socket.io Chat</h1>
+      <h3>誰でも歓迎！！注意:下ネタはやめてね！DOS,DDOS攻撃もやめてね！</h3>
+      <div id="chat-box">
+        <ul id="chat-list"></ul>
+      </div>
+      <div class="chat-input-group">
+        <input id="msg" placeholder="message" onkeypress="if(event.key === 'Enter') send()">
+        <button id="send-btn" class="button" onclick="send()">Send</button>
+      </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+      // 自分のSocket.ioサーバーのURLに変更
+      const socket = io("https://render-socket-io-server-mmrc-vercel-app.onrender.com/");
+
+      const list = document.getElementById("chat-list");
+      const input = document.getElementById("msg");
+      const chatBox = document.getElementById("chat-box");
+
+      // 履歴の受信
+      socket.on("init", (messages) => {
+        list.innerHTML = "";
+        messages.forEach(m => addMessage(m));
+      });
+
+      // 新しいメッセージを受信
+      socket.on("chat", (m) => addMessage(m));
+
+      // 表示関数
+      function addMessage(m) {
+        const li = document.createElement("li");
+        const time = new Date(m.time).toLocaleTimeString();
+        const senderId = m.sender ? m.sender.split('.').slice(0, 2).join('.') + '.*.*' : 'user';
+        li.innerHTML = `<span style="color: var(--secondary-color);">${time}</span> <span style="color: var(--primary-color);">[${senderId}]</span>: ${m.text}`;
+        list.appendChild(li);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      // メッセージ送信
+      function send() {
+        const msg = input.value.trim();
+        if (!msg) return;
+        socket.emit("chat", msg);
+        input.value = "";
+      }
+    </script>
+  </body>
+</html>
