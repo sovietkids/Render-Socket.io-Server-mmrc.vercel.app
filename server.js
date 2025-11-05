@@ -5,47 +5,37 @@ import fs from "fs";
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" }
-});
+const io = new Server(server, { cors: { origin: "*" } });
 
-// JSONファイルのパス
 const FILE_PATH = "./messages.json";
-
-// ファイルが存在しなければ初期化
-if (!fs.existsSync(FILE_PATH)) {
-  fs.writeFileSync(FILE_PATH, "[]");
+let messages = [];
+try {
+  if (fs.existsSync(FILE_PATH)) {
+    messages = JSON.parse(fs.readFileSync(FILE_PATH, "utf8"));
+  }
+} catch (err) {
+  console.error("⚠️ Failed to read messages.json:", err);
 }
+
+app.use(express.static("public"));
 
 io.on("connection", (socket) => {
   console.log("✅ Client connected:", socket.id);
 
-  // 接続時に過去のメッセージを送信
-  const history = JSON.parse(fs.readFileSync(FILE_PATH, "utf-8"));
-  socket.emit("chat_history", history);
+  socket.emit("init", messages);
 
-  // メッセージを受け取る
   socket.on("chat", (msg) => {
-    console.log("💬 Message:", msg);
-
-    // ファイルを読み込み
-    const messages = JSON.parse(fs.readFileSync(FILE_PATH, "utf-8"));
-
-    // 新しいメッセージを追加
-    const newMessage = {
-      id: Date.now(),
-      text: msg,
-      time: new Date().toISOString(),
-    };
-    messages.push(newMessage);
-
-    // JSONファイルに保存
+    console.log("💬", msg);
+    const entry = { text: msg, time: new Date().toISOString() };
+    messages.push(entry);
     fs.writeFileSync(FILE_PATH, JSON.stringify(messages, null, 2));
+    io.emit("chat", entry);
+  });
 
-    // 全員に配信
-    io.emit("chat", newMessage);
+  socket.on("disconnect", () => {
+    console.log("❌ Client disconnected:", socket.id);
   });
 });
 
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log(`🚀 Socket.io server running on port ${PORT}`));
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, () => console.log(`🚀 Socket.io server running on ${PORT}`));
