@@ -122,7 +122,7 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
       // 自分のSocket.ioサーバーのURLに変更
-      const socket = io("https://render-socket-io-server-mmrc-vercel-app.onrender.com/");
+      const socket = io();
 
       const list = document.getElementById("chat-list");
       const input = document.getElementById("msg");
@@ -148,12 +148,18 @@
       }
 
       // メッセージ送信
-      function send() {
-        const msg = input.value.trim();
-        if (!msg) return;
-        socket.emit("chat", msg);
-        input.value = "";
-      }
+function send() {
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  socket.emit("chat", {
+    text: msg,
+    username: "user"  // ここ好きな名前にしてOK
+  });
+
+  input.value = "";
+}
+
     </script>
   </body>
 </html>
