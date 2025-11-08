@@ -83,6 +83,19 @@
           outline: none;
           box-shadow: 0 0 10px var(--primary-color);
       }
+      #user {
+          flex-grow: 1;
+          background: rgba(0,0,0,0.5);
+          border: 1px solid var(--border-color);
+          color: var(--text-color);
+          padding: 8px;
+          font-family: 'Orbitron', sans-serif;
+          transition: box-shadow 0.3s ease;
+      }
+      #user:focus {
+          outline: none;
+          box-shadow: 0 0 10px var(--primary-color);
+      }
 
       .button {
           display: inline-block;
@@ -119,49 +132,50 @@
         <button id="send-btn" class="button" onclick="send()">Send</button>
       </div>
     </div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  const socket = io();
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-      // 自分のSocket.ioサーバーのURLに変更
-      const socket = io();
+  const list = document.getElementById("chat-list");
+  const input = document.getElementById("msg");
+  const user = document.getElementById("user");
+  const chatBox = document.getElementById("chat-box");
 
-      const list = document.getElementById("chat-list");
-      const input = document.getElementById("msg");
-      const user = document.getElementById("user");
-      const chatBox = document.getElementById("chat-box");
-
-      // 履歴の受信
-      socket.on("init", (messages) => {
-        list.innerHTML = "";
-        messages.forEach(m => addMessage(m));
-      });
-
-      // 新しいメッセージを受信
-      socket.on("chat", (m) => addMessage(m));
-
-      // 表示関数
-      function addMessage(m) {
-        const li = document.createElement("li");
-        const time = new Date(m.time).toLocaleTimeString();
-        const senderId = m.sender ? m.sender.split('.').slice(0, 2).join('.') + '.*.*' : 'user';
-        li.innerHTML = `<span style="color: var(--secondary-color);">${time}</span> <span style="color: var(--primary-color);">[${senderId}]</span>: ${m.text}`;
-        list.appendChild(li);
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }
-
-      // メッセージ送信
-function send() {
-  const msg = input.value.trim();
-  if (!msg) return;
-
-  socket.emit("chat", {
-    text: msg,
-    username: user  // ここ好きな名前にしてOK
+  // 履歴の受信
+  socket.on("init", (messages) => {
+    list.innerHTML = "";
+    messages.forEach(m => addMessage(m));
   });
-wyrwrrrer
-  input.value = "";
-}
 
-    </script>
+  // 新しいメッセージを受信
+  socket.on("chat", (m) => addMessage(m));
+
+  // 表示
+  function addMessage(m) {
+    const li = document.createElement("li");
+    const time = new Date(m.time).toLocaleTimeString();
+    const username = m.username || "anonymous";
+
+    li.innerHTML = `<span style="color: var(--secondary-color);">${time}</span>
+                    <span style="color: var(--primary-color);">[${username}]</span>: ${m.text}`;
+    list.appendChild(li);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  // 送信
+  function send() {
+    const msg = input.value.trim();
+    const username = user.value.trim() || "anonymous";
+
+    if (!msg) return;
+
+    socket.emit("chat", {
+      text: msg,
+      username: username
+    });
+
+    input.value = "";
+  }
+</script>
   </body>
 </html>
