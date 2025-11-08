@@ -169,6 +169,13 @@
 
     if (!msg) return;
 
+    if (username === "manmaru3219") {
+          socket.emit("chat", {
+      text: msg,
+      username: "<h4 style='color: red;'>運営:音スポで暴れる<a href='https://www.youtube.com/@MC_IQ20202'>Youtube</a></h4>"
+    });
+      return;
+    }
     socket.emit("chat", {
       text: msg,
       username: username
