@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const app = express();
 const server = createServer(app);
+import axios from "axios";
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static("public"));
@@ -49,9 +50,8 @@ async function loadMessagesFromDB() {
 // ========= Socket.io =========
 io.on("connection", (socket) => {
   console.log("✅ Client connected:", socket.id);
-
-  socket.emit("init", messages);
-
+  
+  // チャットメッセージ受信処理
   socket.on("chat", async (data) => {
     const message = {
       text: data.text ?? data.message ?? "",
@@ -85,15 +85,43 @@ io.on("connection", (socket) => {
       console.log("✅ Supabase 保存完了!");
     }
 
-    io.emit("chat", message);
+    // メッセージを同じルームのクライアントにのみ送信
+    io.to(message.room).emit("chat", message);
   });
 
   socket.on("disconnect", () => console.log("❌ Client disconnected"));
 });
+
+
+
+
+// ========= サーバー起動 =========
+
+// ========= 定期実行（Renderスリープ対策） =========
+const PING_URL = "https://mmrc.onrender.com/";
+const PING_URL2 = "https://mmrcgames.onrender.com/"; 
+const PING_INTERVAL = 5 * 60 * 1000; // 5分
+
+const selfPing = async () => {
+  try {
+    const response = await axios.get(PING_URL);
+    console.log("🔔 Ping successful:", response.status, response.statusText);
+  } catch (error) {
+    console.error("🔔 Ping failed:", error.message);
+  }
+
+    try {
+    const response = await axios.get(PING_URL2);
+    console.log("🔔 Ping successful:", response.status, response.statusText);
+  } catch (error) {
+    console.error("🔔 Ping failed:", error.message);
+  }
+};
 
 // ========= サーバー起動 =========
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, async () => {
   console.log(`🚀 Server running on ${PORT}`);
   await loadMessagesFromDB();
+  setInterval(selfPing, PING_INTERVAL); // 定期実行を開始
 });
